@@ -427,12 +427,13 @@ mod tests {
             pc_no: u8,
             unit_io_no: u16,
             unit_no: u8,
-            data_len: u16,
+            data_len: u32,
             timer: Option<u16>,
             #[serde(with = "serde_bytes")]
             data1: Vec<u8>,
             #[serde(with = "serde_bytes")]
             data2: Vec<u8>,
+            data3: String,
         }
 
         let test = Test {
@@ -441,14 +442,15 @@ mod tests {
             pc_no: 0xFFu8,
             unit_io_no: 0xFF03,
             unit_no: 0x00u8,
-            data_len: 0x0002u16,
+            data_len: 0x0002u32,
             timer: Some(0x0000u16),
             data1: "abcd".as_bytes().to_vec(),
-            data2: vec![],
+            data2: vec![0xFFu8],
+            data3: "abc".to_string(),
         };
         let expected = [
-            0x50u8, 0x00, 0x00, 0xFF, 0xFF, 0x03, 0x00, 0x00, 0x02, 0x00, 0x00,
-            0x61, 0x62, 0x63, 0x64,
+            0x50u8, 0x00, 0x00, 0xFF, 0xFF, 0x03, 0x00, 0x00, 0x00, 0x00, 0x02,
+            0x00, 0x00, 0x61, 0x62, 0x63, 0x64, 0xFF, 0x61, 0x62, 0x63,
         ];
         assert_eq!(to_bytes(&test).unwrap(), expected);
     }
