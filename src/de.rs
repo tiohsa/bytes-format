@@ -412,11 +412,11 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     // the variant of an enum. In JSON, struct fields and enum variants are
     // represented as strings. In other formats they may be represented as
     // numeric indices.
-    fn deserialize_identifier<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_identifier<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        self.deserialize_str(visitor)
+        unimplemented!()
     }
 
     // Like `deserialize_any` but indicates to the `Deserializer` that it makes
@@ -430,11 +430,11 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     // Some formats are not able to implement this at all. Formats that can
     // implement `deserialize_any` and `deserialize_ignored_any` are known as
     // self-describing.
-    fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_ignored_any<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        self.deserialize_any(visitor)
+        unimplemented!()
     }
 }
 
@@ -476,33 +476,28 @@ mod tests {
     fn test_struct() {
         #[derive(Deserialize, PartialEq, Debug)]
         struct Test {
-            sub_heder: u16,
-            network_no: u8,
-            pc_no: u8,
-            unit_io_no: u16,
-            unit_no: u8,
-            data_len: u16,
-            timer: u16,
+            b8: u8,
+            b16: u16,
+            b32: u32,
+            b64: u64,
             #[serde(with = "serde_bytes")]
-            data: Vec<u8>,
+            v8: Vec<u8>,
         }
 
-        let bytes = [
-            0x50u8, 0x00, 0x00, 0xFF, 0xFF, 0x03, 0x00, 0x00, 0x02, 0x00, 0x00,
-            0x61, 0x62, 0x63, 0x64,
-        ];
+        let test = [
+            0x00u8, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
+            0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
+        ]
+        .to_vec();
 
         let expected = Test {
-            sub_heder: 0x5000u16,
-            network_no: 0x00u8,
-            pc_no: 0xFFu8,
-            unit_io_no: 0xFF03,
-            unit_no: 0x00u8,
-            data_len: 0x0002u16,
-            timer: 0x0000u16,
-            data: "abcd".as_bytes().to_vec(),
+            b8: 0x00u8,
+            b16: 0x0102u16,
+            b32: 0x03040506u32,
+            b64: 0x0708090A0B0C0D0Eu64,
+            v8: vec![0x0Fu8, 0x10],
         };
 
-        assert_eq!(from_bytes::<Test>(&bytes[..]).unwrap(), expected);
+        assert_eq!(from_bytes::<Test>(&test[..]).unwrap(), expected);
     }
 }

@@ -85,27 +85,17 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     }
 
     fn serialize_u16(self, v: u16) -> Result<()> {
-        let bytes = [(v >> 8) as u8, v as u8];
+        let bytes = v.to_be_bytes();
         self.serialize_bytes(&bytes)
     }
 
     fn serialize_u32(self, v: u32) -> Result<()> {
-        let bytes = [(v >> 24) as u8, (v >> 16) as u8, (v >> 8) as u8, v as u8];
+        let bytes = v.to_be_bytes();
         self.serialize_bytes(&bytes)
     }
 
     fn serialize_u64(self, v: u64) -> Result<()> {
-        let bytes = [
-            (v >> 56) as u8,
-            (v >> 48) as u8,
-            (v >> 40) as u8,
-            (v >> 40) as u8,
-            (v >> 32) as u8,
-            (v >> 24) as u8,
-            (v >> 16) as u8,
-            (v >> 8) as u8,
-            v as u8,
-        ];
+        let bytes = v.to_be_bytes();
         self.serialize_bytes(&bytes)
     }
 
@@ -117,15 +107,12 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         unimplemented!()
     }
 
-    // Serialize a char as a single-character string. Other formats may
-    // represent this differently.
-    fn serialize_char(self, v: char) -> Result<()> {
-        self.serialize_str(&v.to_string())
+    fn serialize_char(self, _v: char) -> Result<()> {
+        unimplemented!()
     }
 
-    fn serialize_str(self, v: &str) -> Result<()> {
-        let bytes = v.as_bytes();
-        self.serialize_bytes(&bytes)
+    fn serialize_str(self, _v: &str) -> Result<()> {
+        unimplemented!()
     }
 
     // Serialize a byte array as an array of bytes.
@@ -139,30 +126,30 @@ impl<'a> ser::Serializer for &'a mut Serializer {
     }
 
     fn serialize_none(self) -> Result<()> {
-        self.serialize_unit()
+        unimplemented!()
     }
 
     // A present optional is represented as just the contained value. Note that
     // this is a lossy representation. For example the values `Some(())` and
     // `None` both serialize as just empty.
-    fn serialize_some<T>(self, value: &T) -> Result<()>
+    fn serialize_some<T>(self, _value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        value.serialize(self)
+        unimplemented!()
     }
 
     // In Serde, unit means an anonymous value containing no data. Map this to
     // bytes as empty.
     fn serialize_unit(self) -> Result<()> {
-        Ok(())
+        unimplemented!()
     }
 
     // Unit struct means a named value containing no data. Again, since there is
     // no data, map this to bytes as empty. There is no need to serialize the
     // name in most formats.
     fn serialize_unit_struct(self, _name: &'static str) -> Result<()> {
-        self.serialize_unit()
+        unimplemented!()
     }
 
     // When serializing a unit variant (or any other kind of variant), formats
@@ -173,9 +160,9 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         self,
         _name: &'static str,
         _variant_index: u32,
-        variant: &'static str,
+        _variant: &'static str,
     ) -> Result<()> {
-        self.serialize_str(variant)
+        unimplemented!()
     }
 
     // As is done here, serializers are encouraged to treat newtype structs as
@@ -199,13 +186,12 @@ impl<'a> ser::Serializer for &'a mut Serializer {
         _name: &'static str,
         _variant_index: u32,
         _variant: &'static str,
-        value: &T,
+        _value: &T,
     ) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        value.serialize(&mut *self)?;
-        Ok(())
+        unimplemented!()
     }
 
     // Now we get to the serialization of compound types.
@@ -285,7 +271,6 @@ impl<'a> ser::SerializeSeq for &'a mut Serializer {
     }
 }
 
-// Same thing but for tuples.
 impl<'a> ser::SerializeTuple for &'a mut Serializer {
     type Ok = ();
     type Error = Error;
@@ -358,8 +343,6 @@ impl<'a> ser::SerializeMap for &'a mut Serializer {
     }
 }
 
-// Structs are like maps in which the keys are constrained to be compile-time
-// constant bytes.
 impl<'a> ser::SerializeStruct for &'a mut Serializer {
     type Ok = ();
     type Error = Error;
@@ -389,12 +372,12 @@ impl<'a> ser::SerializeStructVariant for &'a mut Serializer {
     fn serialize_field<T>(
         &mut self,
         _key: &'static str,
-        value: &T,
+        _value: &T,
     ) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        value.serialize(&mut **self)
+        unimplemented!()
     }
 
     fn end(self) -> Result<()> {
@@ -410,48 +393,29 @@ mod tests {
     use serde_derive::Serialize;
 
     #[test]
-    fn test_shift() {
-        let v = 0x5000u16;
-        let u = (v >> 8) as u8;
-        let l = v as u8;
-        assert_eq!(u, 0x50u8);
-        assert_eq!(l, 0x00u8);
-    }
-
-    #[test]
     fn test_struct() {
         #[derive(Serialize)]
         struct Test {
-            sub_heder: u16,
-            network_no: u8,
-            pc_no: u8,
-            unit_io_no: u16,
-            unit_no: u8,
-            data_len: u32,
-            timer: Option<u16>,
+            b8: u8,
+            b16: u16,
+            b32: u32,
+            b64: u64,
             #[serde(with = "serde_bytes")]
-            data1: Vec<u8>,
-            #[serde(with = "serde_bytes")]
-            data2: Vec<u8>,
-            data3: String,
+            v8: Vec<u8>,
         }
 
         let test = Test {
-            sub_heder: 0x5000u16,
-            network_no: 0x00u8,
-            pc_no: 0xFFu8,
-            unit_io_no: 0xFF03,
-            unit_no: 0x00u8,
-            data_len: 0x0002u32,
-            timer: Some(0x0000u16),
-            data1: "abcd".as_bytes().to_vec(),
-            data2: vec![0xFFu8],
-            data3: "abc".to_string(),
+            b8: 0x00u8,
+            b16: 0x0102u16,
+            b32: 0x03040506u32,
+            b64: 0x0708090A0B0C0D0Eu64,
+            v8: vec![0x0Fu8, 0x10],
         };
         let expected = [
-            0x50u8, 0x00, 0x00, 0xFF, 0xFF, 0x03, 0x00, 0x00, 0x00, 0x00, 0x02,
-            0x00, 0x00, 0x61, 0x62, 0x63, 0x64, 0xFF, 0x61, 0x62, 0x63,
-        ];
+            0x00u8, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
+            0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
+        ]
+        .to_vec();
         assert_eq!(to_bytes(&test).unwrap(), expected);
     }
 }
