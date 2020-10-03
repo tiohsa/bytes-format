@@ -8,7 +8,7 @@
 
 use crate::error::{Error, Result};
 use serde::de::{self, Deserialize, DeserializeSeed, SeqAccess, Visitor};
-use std::ops::{AddAssign, MulAssign, Neg};
+use std::ops::{AddAssign, MulAssign};
 
 pub struct Deserializer<'de> {
     // This bytes starts with the input data and characters are truncated off
@@ -120,16 +120,6 @@ impl<'de> Deserializer<'de> {
         self.input = &[];
         Ok(T::from(bytes))
     }
-
-    // Parse a possible minus sign followed by a group of decimal digits as a
-    // signed integer of type T.
-    fn parse_signed<T>(&mut self) -> Result<T>
-    where
-        T: Neg<Output = T> + AddAssign<T> + MulAssign<T> + From<i8>,
-    {
-        // Optional minus sign, delegate to `parse_unsigned`, negate if negative.
-        unimplemented!()
-    }
 }
 
 impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
@@ -168,32 +158,32 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
 
     // The `parse_signed` function is generic over the integer type `T` so here
     // it is invoked with `T=i8`. The next 8 methods are similar.
-    fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_i8<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        visitor.visit_i8(self.parse_signed()?)
+        unimplemented!()
     }
 
-    fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_i16<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        visitor.visit_i16(self.parse_signed()?)
+        unimplemented!()
     }
 
-    fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_i32<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        visitor.visit_i32(self.parse_signed()?)
+        unimplemented!()
     }
 
-    fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value>
+    fn deserialize_i64<V>(self, _visitor: V) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        visitor.visit_i64(self.parse_signed()?)
+        unimplemented!()
     }
 
     fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value>
@@ -310,12 +300,12 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     fn deserialize_unit_struct<V>(
         self,
         _name: &'static str,
-        visitor: V,
+        _visitor: V,
     ) -> Result<V::Value>
     where
         V: Visitor<'de>,
     {
-        self.deserialize_unit(visitor)
+        unimplemented!()
     }
 
     // As is done here, serializers are encouraged to treat newtype structs as
@@ -470,6 +460,7 @@ impl<'de, 'a> SeqAccess<'de> for BytesSeparated<'a, 'de> {
 #[cfg(test)]
 mod tests {
     use super::from_bytes;
+    use crate::value_type::Word;
     use serde_derive::Deserialize;
 
     #[test]
@@ -480,13 +471,14 @@ mod tests {
             b16: u16,
             b32: u32,
             b64: u64,
+            word: Word,
             #[serde(with = "serde_bytes")]
             v8: Vec<u8>,
         }
 
         let test = [
             0x00u8, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
-            0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
+            0x0B, 0x0C, 0x0D, 0x0E, 0x34, 0x12, 0x0F, 0x10,
         ]
         .to_vec();
 
@@ -495,6 +487,7 @@ mod tests {
             b16: 0x0102u16,
             b32: 0x03040506u32,
             b64: 0x0708090A0B0C0D0Eu64,
+            word: Word(0x1234u16),
             v8: vec![0x0Fu8, 0x10],
         };
 

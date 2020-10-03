@@ -381,7 +381,7 @@ impl<'a> ser::SerializeStructVariant for &'a mut Serializer {
     }
 
     fn end(self) -> Result<()> {
-        Ok(())
+        unimplemented!()
     }
 }
 
@@ -390,6 +390,7 @@ impl<'a> ser::SerializeStructVariant for &'a mut Serializer {
 #[cfg(test)]
 mod tests {
     use super::to_bytes;
+    use crate::value_type::Word;
     use serde_derive::Serialize;
 
     #[test]
@@ -400,6 +401,7 @@ mod tests {
             b16: u16,
             b32: u32,
             b64: u64,
+            word: Word,
             #[serde(with = "serde_bytes")]
             v8: Vec<u8>,
         }
@@ -409,11 +411,12 @@ mod tests {
             b16: 0x0102u16,
             b32: 0x03040506u32,
             b64: 0x0708090A0B0C0D0Eu64,
+            word: Word(0x1234u16),
             v8: vec![0x0Fu8, 0x10],
         };
         let expected = [
             0x00u8, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A,
-            0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10,
+            0x0B, 0x0C, 0x0D, 0x0E, 0x34, 0x12, 0x0F, 0x10,
         ]
         .to_vec();
         assert_eq!(to_bytes(&test).unwrap(), expected);

@@ -9,6 +9,7 @@
 mod de;
 mod error;
 mod ser;
+mod value_type;
 
 pub use crate::de::{from_bytes, Deserializer};
 pub use crate::error::{Error, Result};
